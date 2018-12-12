@@ -1,0 +1,26 @@
+server:
+  port: 9091
+  session:
+    timeout: 30
+  context-path: /base
+spring:
+  datasource:
+    username: root
+    password: 123456
+    url: jdbc:mysql://119.23.127.205:3306/breed_dev?useUnicode=true&amp;characterEncoding=UTF-8
+  jpa:
+    hibernate:
+      ddl-auto: update
+logging:
+  level:
+    root: info
+    com:
+      massestech: DEBUG
+      ibatis: DEBUG
+mybatis:
+  type-handlers-package: com.massestech.common.mybatis.handler
+  typeAliasesPackage: com.massestech
+  configuration:
+    map-underscore-to-camel-case: true
+
+
