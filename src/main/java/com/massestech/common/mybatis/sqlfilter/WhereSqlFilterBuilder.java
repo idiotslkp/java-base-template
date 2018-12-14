@@ -216,6 +216,15 @@ public class WhereSqlFilterBuilder {
     }
 
     /**
+     * 得到leftJoinSqlFilterBuilder，以便于继续执行拼装sql
+     * @return
+     */
+    public JoinSqlFilterBuilder leftJoinFilter() {
+        JoinSqlFilterBuilder joinSqlFilterBuilder = new JoinSqlFilterBuilder(entity);
+        return joinSqlFilterBuilder;
+    }
+
+    /**
      * 存放参数,并且获取到key
      * @param value
      * @return

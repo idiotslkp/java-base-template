@@ -41,7 +41,7 @@ public abstract class AbstractTemplate<T extends EntityAware> {
      * @return
      */
     protected String tableNameByMapperClass(Class mapperClass) {
-        return ReflectUtils.tableName(getEntityClass(mapperClass));
+        return SqlUtil.tableName(getEntityClass(mapperClass));
     }
 
     /**

@@ -4,7 +4,11 @@ import com.massestech.common.domain.BaseEntity;
 import com.massestech.common.mybatis.cons.SqlCons;
 import com.massestech.common.mybatis.sqlfilter.AbstractSqlFilter;
 import com.massestech.common.mybatis.sqlfilter.JoinSqlFilterBuilder;
+import com.massestech.common.mybatis.utils.CamelToUnderline;
+import com.massestech.common.mybatis.utils.ReflectUtils;
+import com.massestech.common.mybatis.utils.SqlUtil;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -13,32 +17,46 @@ import java.util.Map;
  */
 public class LeftJoibSqlFilter extends AbstractSqlFilter {
 
-    private BaseEntity joinEntity;
-
+    /** 连接表的别名,如果指定别名，那么说明该连接到时返回的参数会封装在嵌套的model里面. */
+    private String alias;
+    /** 连接的class */
+    private Class<? extends BaseEntity> joinEntityClass;
+    /** on连接条件集合 */
     private Map<String, String> onCondition = new LinkedHashMap<>();
     /** 关联字段 */
     private String relationId;
-
+    /** 用于返回语句构建器 */
     private JoinSqlFilterBuilder joinSqlFilterBuilder;
 
-    //
-    public LeftJoibSqlFilter(BaseEntity joinEntity, JoinSqlFilterBuilder joinSqlFilterBuilder) {
-//        , JoinSqlFilterBuilder joinSqlFilterBuilder
-        this.joinEntity = joinEntity;
+    private Map<String, String> columnAndFieldMap;
+
+    public LeftJoibSqlFilter(Class<? extends BaseEntity> joinEntityClass, JoinSqlFilterBuilder joinSqlFilterBuilder, String alias) {
+        this.alias = alias == null ? SqlUtil.tableName(joinEntityClass) : alias;
+        this.joinEntityClass = joinEntityClass;
         this.joinSqlFilterBuilder = joinSqlFilterBuilder;
+        this.columnAndFieldMap = SqlUtil.getColumnAndFieldsMap(joinEntityClass);
     }
 
     @Override
     protected void appendSql() {
-//        sb.append(SqlCons.SELECT).append("a.*,b.*").append(" left join ").append("").append(" on ");
+        // 如果没有关联id，那么说明返回的结果集是直接封装在主model里面，否则就是封装在嵌套的model里面
+        if (null != relationId) {
+            sb = new StringBuilder();
+            for (String column : columnAndFieldMap.keySet()) {
+                sb.append(",").append(alias).append(".").append(column).append(" ").append(columnAndFieldMap.get(column));
+            }
+        }
+        if (sb.length() == 0) {
+            // todo 异常.
+        }
     }
 
     public Map<String, String> getOnCondition() {
         return onCondition;
     }
 
-    public BaseEntity getJoinEntity() {
-        return joinEntity;
+    public Class<? extends BaseEntity> getJoinEntityClass() {
+        return joinEntityClass;
     }
 
     /**
@@ -52,6 +70,40 @@ public class LeftJoibSqlFilter extends AbstractSqlFilter {
     }
 
     /**
+     * 定义返回的值，field的字段名必须得是joinEntityClass里面的字段,如果不是，那么就使用下面的带有tableColumn参数的方法
+     *
+     * @param field model的字段名
+     * @return
+     */
+    public LeftJoibSqlFilter field(String field) {
+        sb.append(",").append(CamelToUnderline.camelToUnderline(field)).append(" ").append(field);
+        return this;
+    }
+
+    /**
+     * 定义返回的值
+     *
+     * @param tableColumn 数据库的字段名
+     * @param field model的字段名
+     * @return
+     */
+    public LeftJoibSqlFilter field(String tableColumn, String field) {
+        sb.append(",").append(CamelToUnderline.camelToUnderline(tableColumn)).append(" ").append(field);
+        return this;
+    }
+
+    /**
+     * 获取表别名
+     *
+     * @return
+     */
+    public String getAlias() {
+        return alias;
+    }
+
+    // --------------------------------------------以下是用于返回model里面包含model的参数封装的时候做映射关系用.----------------------------------------------------------------------
+
+    /**
      * 设置关联的条件,并返回对应的条件构造器
      * @param relationId
      */
@@ -59,14 +111,5 @@ public class LeftJoibSqlFilter extends AbstractSqlFilter {
         this.relationId = relationId;
         return joinSqlFilterBuilder;
     }
-
-    // select a.* from (select * from tableA where condition = #{condition} limit ? ,?) a left join tableB b on a.id = b.parentId
-    // a.*,b.*由他们自己的sqlFilter提供。这个filter只负责拼接。
-    // select a.*,b.* from
-    // select * from tableA where condition = #{condition} limit ? ,? --》 主表sqlFilter
-    // tableB --》 关联表sqlFilter
-    //
-
-
 
 }

@@ -72,19 +72,19 @@ public abstract class ReflectUtils {
         return entityClass;
     }
 
-    /**
-     * 根据实体class获取表名
-     *
-     * @param entityClass
-     * @return
-     */
-    public static String tableName(Class entityClass) {
-        Table table = (Table) entityClass.getAnnotation(Table.class);
-        if (table != null) {
-            return table.name();
-        } else {
-            throw new IllegalArgumentException("Undefine POJO @Table, need Annotation(@Table(name))");
-        }
-    }
+//    /**
+//     * 根据实体class获取表名
+//     *
+//     * @param entityClass
+//     * @return
+//     */
+//    public static String tableName(Class entityClass) {
+//        Table table = (Table) entityClass.getAnnotation(Table.class);
+//        if (table != null) {
+//            return table.name();
+//        } else {
+//            throw new IllegalArgumentException("Undefine POJO @Table, need Annotation(@Table(name))");
+//        }
+//    }
 
 }

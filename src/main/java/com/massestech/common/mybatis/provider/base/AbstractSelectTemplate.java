@@ -43,7 +43,7 @@ public abstract class AbstractSelectTemplate<T extends EntityAware> extends Abst
         SQL sql = new SQL();
         String column = selectColumnSqlByObj(obj);
         sql.SELECT(column);
-        sql.FROM(ReflectUtils.tableName(obj.getClass()));
+        sql.FROM(SqlUtil.tableName(obj.getClass()));
         String where = whereSql(obj);
         sql.WHERE(where);
         return sql;
@@ -91,7 +91,7 @@ public abstract class AbstractSelectTemplate<T extends EntityAware> extends Abst
         SQL sql = new SQL();
         String column = selectColumnSqlByClazz((Class<T>) entityClass);
         sql.SELECT(column);
-        sql.FROM(ReflectUtils.tableName(entityClass));
+        sql.FROM(SqlUtil.tableName(entityClass));
         return sql;
     }
 
@@ -100,7 +100,7 @@ public abstract class AbstractSelectTemplate<T extends EntityAware> extends Abst
 
         SQL sql = new SQL();
         sql.SELECT("count(1)");
-        sql.FROM(ReflectUtils.tableName(entityClass));
+        sql.FROM(SqlUtil.tableName(entityClass));
         String findAllWhereSql = this.noConditionWhereSql();
         if (StringUtils.isNotEmpty(findAllWhereSql)) {
             sql.WHERE( findAllWhereSql);
@@ -111,7 +111,7 @@ public abstract class AbstractSelectTemplate<T extends EntityAware> extends Abst
     public String countCondition(T obj) {
         SQL sql = new SQL();
         sql.SELECT("count(1)");
-        sql.FROM(ReflectUtils.tableName(obj.getClass()));
+        sql.FROM(SqlUtil.tableName(obj.getClass()));
         String where = this.whereSql(obj);
         sql.WHERE(where);
         return sql.toString();

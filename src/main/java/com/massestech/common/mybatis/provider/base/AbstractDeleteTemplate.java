@@ -2,6 +2,7 @@ package com.massestech.common.mybatis.provider.base;
 
 import com.massestech.common.domain.EntityAware;
 import com.massestech.common.mybatis.utils.ReflectUtils;
+import com.massestech.common.mybatis.utils.SqlUtil;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.builder.annotation.ProviderContext;
 import org.apache.ibatis.jdbc.SQL;
@@ -25,7 +26,7 @@ public abstract class AbstractDeleteTemplate<T extends EntityAware> extends Abst
         } else {
             StringBuilder sqlStr = new StringBuilder();
             SQL sql = new SQL();
-            sql.UPDATE(ReflectUtils.tableName(obj.getClass()));
+            sql.UPDATE(SqlUtil.tableName(obj.getClass()));
             sql.SET(deleteSetSql());
             sql.WHERE(where);
             sqlStr.append(sql.toString());

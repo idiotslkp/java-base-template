@@ -64,11 +64,12 @@ public class JoinMainTableSqlFilter extends AbstractSqlFilter {
         // 拼接子表
         for (int i = 0; i < leftJoibSqlFilterList.size(); i++) {
             LeftJoibSqlFilter leftJoibSqlFilter = leftJoibSqlFilterList.get(i);
-            BaseEntity joinEntity = leftJoibSqlFilter.getJoinEntity();
-            String tableName = ReflectUtils.tableName(joinEntity.getClass());
+            Class<? extends BaseEntity> joinEntityClass = leftJoibSqlFilter.getJoinEntityClass();
+            String tableName = SqlUtil.tableName(joinEntityClass);
             // b.column1, b.column2
             // 拼接连接表的字段
-            appendLeftJoinCloumn(leftJoinColumnBuilder, joinEntity, tableName);
+//            appendLeftJoinCloumn(leftJoinColumnBuilder, joinEntityClass, tableName);
+            leftJoinColumnBuilder.append(leftJoibSqlFilter.sql());
 
             // left join tableB b
             sb.append(SqlCons.LEFT_JOIN)
@@ -82,20 +83,20 @@ public class JoinMainTableSqlFilter extends AbstractSqlFilter {
 //        System.out.println(mainTableSql);
     }
 
-    /**
-     * 拼接连接表的字段
-     * @param leftJoinColumnBuilder
-     * @param joinEntity
-     */
-    private void appendLeftJoinCloumn(StringBuilder leftJoinColumnBuilder, BaseEntity joinEntity, String tableName) {
-        Iterator columnIterator = SqlUtil.getColumnList(joinEntity.getClass()).iterator();
-        // 获取连接表的表字段,b.column1,b.column2,c.column1,c.column2
-        while(columnIterator.hasNext()) {
-            Map<String, String> map = (Map)columnIterator.next();
-            String joinColumnName = map.get(SqlUtil.TAB_COLUMN);
-            leftJoinColumnBuilder.append(",").append(tableName).append(".").append(joinColumnName);
-        }
-    }
+//    /**
+//     * 拼接连接表的字段
+//     * @param leftJoinColumnBuilder
+//     * @param joinEntityClass 连接表的class
+//     */
+//    private void appendLeftJoinCloumn(StringBuilder leftJoinColumnBuilder, Class<? extends BaseEntity> joinEntityClass, String tableName) {
+//        Iterator columnIterator = SqlUtil.getColumnList(joinEntityClass).iterator();
+//        // 获取连接表的表字段,b.column1,b.column2,c.column1,c.column2
+//        while(columnIterator.hasNext()) {
+//            Map<String, String> map = (Map)columnIterator.next();
+//            String joinColumnName = map.get(SqlUtil.TAB_COLUMN);
+//            leftJoinColumnBuilder.append(",").append(tableName).append(".").append(joinColumnName);
+//        }
+//    }
 
     /**
      * 拼接on的条件
@@ -124,10 +125,14 @@ public class JoinMainTableSqlFilter extends AbstractSqlFilter {
     }
 
     public static void main(String[] args) {
+        // 这两个条件会自动的在sql里面加上
         UserEntity userEntity = new UserEntity();
-        UserEntity userEntity1 = new UserEntity();
+        userEntity.setUserName("test");
+        userEntity.setAge(20);
 
-        SqlFilterBuilder.buildLeftJoin(userEntity).leftJoin(userEntity1).on("id", "parentId").relationId("parentId");
+        SqlFilterBuilder.buildWhere(userEntity).like("userName", "test").leftJoinFilter()
+                .leftJoin(UserEntity.class).on("id", "parentId").relationId("parentId");
+//            .leftJoin(UserEntity.class).on("id", "parentId").on("id", "parentId").relationId("parentId");
 
         SelectTemplate<UserEntity> selectTemplate = new SelectTemplate();
         String sql = selectTemplate.leftJoin(userEntity);

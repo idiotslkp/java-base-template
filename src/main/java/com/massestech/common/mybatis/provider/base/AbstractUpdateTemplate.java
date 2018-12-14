@@ -37,7 +37,7 @@ public class AbstractUpdateTemplate<T extends EntityAware> extends AbstractTempl
 
     protected String getUpdateSql(T obj, boolean isSetNotNull) {
         SQL sql = new SQL();
-        sql.UPDATE(ReflectUtils.tableName(obj.getClass()));
+        sql.UPDATE(SqlUtil.tableName(obj.getClass()));
         String returnUpdateSet = updateSetSql(obj, isSetNotNull);
         sql.SET(returnUpdateSet);
         String updateWhereSql = this.whereByIdSql();
@@ -59,7 +59,7 @@ public class AbstractUpdateTemplate<T extends EntityAware> extends AbstractTempl
      */
     public String updateSelectiveSqlFilter(T obj) {
         SQL sql = new SQL();
-        sql.UPDATE(ReflectUtils.tableName(obj.getClass()));
+        sql.UPDATE(SqlUtil.tableName(obj.getClass()));
         sql.SET(this.updateSetSql(obj, false));
         String where = this.updateWhereSql(obj);
         if (!"".equals(where)) {

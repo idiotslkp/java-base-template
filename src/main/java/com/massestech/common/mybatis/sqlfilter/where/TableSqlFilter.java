@@ -32,7 +32,7 @@ public class TableSqlFilter extends ParamMapSqlFilter {
         if (value instanceof BaseEntity) {
             // select property from table where 条件 and dr = 0
             BaseEntity baseEntity = (BaseEntity) value;
-            String tableName = ReflectUtils.tableName(baseEntity.getClass());
+            String tableName = SqlUtil.tableName(baseEntity.getClass());
             sb.append(SqlCons.SELECT)
                     .append(this.getColumnName())
             .append(SqlCons.FROM)

@@ -15,8 +15,6 @@ public class JoinSqlFilterBuilder  {
 
     private BaseEntity entity;
 
-//    private List<SqlFilter> joinFilterList;
-
     private JoinMainTableSqlFilter joinMainTableSqlFilter;
 
     /**
@@ -41,11 +39,18 @@ public class JoinSqlFilterBuilder  {
         return this;
     }
 
-    public LeftJoibSqlFilter leftJoin(BaseEntity entity) {
-        LeftJoibSqlFilter leftJoibSqlFilter = new LeftJoibSqlFilter(entity, this);
+    public LeftJoibSqlFilter leftJoin(Class<? extends BaseEntity> baseEntityClass) {
+        LeftJoibSqlFilter leftJoibSqlFilter = new LeftJoibSqlFilter(baseEntityClass, this, null);
         this.joinMainTableSqlFilter.addJoinSqlFilter(leftJoibSqlFilter);
         return leftJoibSqlFilter;
     }
+
+    public LeftJoibSqlFilter leftJoin(Class<? extends BaseEntity> baseEntityClass, String alias) {
+        LeftJoibSqlFilter leftJoibSqlFilter = new LeftJoibSqlFilter(baseEntityClass, this, alias);
+        this.joinMainTableSqlFilter.addJoinSqlFilter(leftJoibSqlFilter);
+        return leftJoibSqlFilter;
+    }
+
 
 }
 

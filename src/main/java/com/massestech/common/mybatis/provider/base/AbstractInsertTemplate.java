@@ -22,7 +22,7 @@ public abstract class AbstractInsertTemplate<T extends EntityAware> extends Abst
      */
     public String insert(T obj) {
         SQL sql = new SQL();
-        sql.INSERT_INTO(ReflectUtils.tableName(obj.getClass()));
+        sql.INSERT_INTO(SqlUtil.tableName(obj.getClass()));
 
         Map<String, String> insertMap = returnInsertColumnsMap(obj);
         sql.VALUES(insertMap.get(SqlUtil.TAB_COLUMN), insertMap.get(SqlUtil.COLUMN_VALUE));
@@ -38,7 +38,7 @@ public abstract class AbstractInsertTemplate<T extends EntityAware> extends Abst
             throw new IllegalArgumentException("新增的列表不能为空.");
         }
         T obj = (T) objList.get(0);
-        String tableName = ReflectUtils.tableName(obj.getClass());
+        String tableName = SqlUtil.tableName(obj.getClass());
         if (tableName == null) {
             throw new IllegalArgumentException("新增的list列表里面的entity,没有对应的@Table注解.");
         }
