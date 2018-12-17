@@ -115,4 +115,25 @@ public class UserController extends SimpleController {
         return ExcelUtils.getResponseEntity(data, filePath, downLoadFileName);
     }
 
+    @ApiOperation("测试连表查询")
+    @GetMapping("join")
+    public RestResponse join() {
+        UserEntity join = userService.join();
+        return success(join);
+    }
+
+    @ApiOperation("测试连表查询,返回一条")
+    @GetMapping("joinOne")
+    public RestResponse joinOne() {
+        UserEntity user = userService.joinOne();
+        return success(user);
+    }
+
+    @ApiOperation("测试连表查询")
+    @GetMapping("joinNesty")
+    public RestResponse joinNesty() {
+        List<Map> joinNesty = userService.joinNesty();
+        return success(joinNesty);
+    }
+
 }

@@ -132,13 +132,13 @@ public abstract class AbstractSelectTemplate<T extends EntityAware> extends Abst
     }
 
     protected void processSelectColumnSql(Class<T> clazz, StringBuilder tabColumnSb) {
-        Iterator columnIterator = SqlUtil.getColumnList(clazz).iterator();
-        while(columnIterator.hasNext()) {
-            Map<String, String> map = (Map)columnIterator.next();
+
+        Map<String, String> columnAndFieldsMap = SqlUtil.getColumnAndFieldsMap(clazz);
+        for (String cloumn : columnAndFieldsMap.keySet()) {
             if (tabColumnSb.length() > 0) {
                 tabColumnSb.append(",");
             }
-            tabColumnSb.append(map.get(SqlUtil.TAB_COLUMN));
+            tabColumnSb.append(cloumn).append(" ").append(columnAndFieldsMap.get(cloumn));
         }
     }
 

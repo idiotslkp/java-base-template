@@ -4,6 +4,7 @@ import com.massestech.common.domain.BaseEntity;
 import com.massestech.common.mybatis.cons.SqlCons;
 import com.massestech.common.mybatis.sqlfilter.join.JoinMainTableSqlFilter;
 import com.massestech.common.mybatis.sqlfilter.join.LeftJoibSqlFilter;
+import com.massestech.common.web.PageInfoView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,6 @@ public class JoinSqlFilterBuilder  {
         this.entity = entity;
         this.joinMainTableSqlFilter = new JoinMainTableSqlFilter(entity);
         this.entity.getSqlFilterAdapter().setJoinSqlFilter(joinMainTableSqlFilter);
-//        this.joinFilterList = new ArrayList<>();
     }
 
     //        // 构建查询条件
@@ -35,22 +35,49 @@ public class JoinSqlFilterBuilder  {
 //        // 在处理数据的时候顺便根据query的条件去进行count查询,然后封装到page里面
 //        Page<Model> page = util.dealData(query, map);
 
-    public JoinSqlFilterBuilder test() {
+    /**
+     * 分页
+     * @param pageInfo
+     * @return
+     */
+    public JoinSqlFilterBuilder page(PageInfoView pageInfo) {
+        page(pageInfo.getPageNum(), pageInfo.getPageNum());
         return this;
     }
 
-    public LeftJoibSqlFilter leftJoin(Class<? extends BaseEntity> baseEntityClass) {
-        LeftJoibSqlFilter leftJoibSqlFilter = new LeftJoibSqlFilter(baseEntityClass, this, null);
+    /**
+     * 分页
+     * @param pageNum
+     * @param pageSize
+     * @return
+     */
+    public JoinSqlFilterBuilder page(int pageNum, int pageSize) {
+        this.joinMainTableSqlFilter.pageSql(pageNum, pageSize);
+        return this;
+    }
+
+    /**
+     * 左连接查询
+     * @param joinEntityClass
+     * @return
+     */
+    public LeftJoibSqlFilter leftJoin(Class<? extends BaseEntity> joinEntityClass) {
+        LeftJoibSqlFilter leftJoibSqlFilter = new LeftJoibSqlFilter(joinEntityClass, this, null, false);
         this.joinMainTableSqlFilter.addJoinSqlFilter(leftJoibSqlFilter);
         return leftJoibSqlFilter;
     }
 
-    public LeftJoibSqlFilter leftJoin(Class<? extends BaseEntity> baseEntityClass, String alias) {
-        LeftJoibSqlFilter leftJoibSqlFilter = new LeftJoibSqlFilter(baseEntityClass, this, alias);
+    /**
+     * 嵌套的连接
+     * @param joinEntityClass
+     * @param alias joinEntityClass在主model中的名称.
+     * @return
+     */
+    public LeftJoibSqlFilter leftJoin(Class<? extends BaseEntity> joinEntityClass, String alias) {
+        LeftJoibSqlFilter leftJoibSqlFilter = new LeftJoibSqlFilter(joinEntityClass, this, alias, true);
         this.joinMainTableSqlFilter.addJoinSqlFilter(leftJoibSqlFilter);
         return leftJoibSqlFilter;
     }
-
 
 }
 

@@ -5,7 +5,8 @@ package com.massestech.common.mybatis.cons;
  */
 public abstract class SqlCons {
 
-    public static final String DELETE_SQL = " deleted = 0 ";
+    public static final String ID = "id";
+    public static final String DELETE_SQL = "deleted = 0 ";
     public static final String WHERE = " where ";
     public static final String FROM = " from ";
     public static final String SELECT = "select ";

@@ -90,25 +90,22 @@ public class AbstractUpdateTemplate<T extends EntityAware> extends AbstractTempl
     /**处理sql语句*/
     protected void processUpdateSetSql(T obj, StringBuilder updateSetSb, boolean isSetNotNull) {
         Class<? extends EntityAware> entityClass = obj.getClass();
-        Iterator fieldItertor = SqlUtil.getColumnList(entityClass).iterator();
-        // 遍历拼接sql
-        while(fieldItertor.hasNext()) {
-            Map<String, String> map = (Map)fieldItertor.next();
+        Map<String, String> columnAndFieldsMap = SqlUtil.getColumnAndFieldsMap(entityClass);
+        for (String column : columnAndFieldsMap.keySet()) {
             // 设置的不为空才会加进去,并且属性值也刚好不为空
             // 首先判断是否是全量更新,如果是,那么直接全量更新
             if (isSetNotNull) {
                 if (updateSetSb.length() > 0) {
                     updateSetSb.append(",");
                 }
-                updateSetSb.append(map.get(SqlUtil.TAB_COLUMN)).append("=").append("#{").append(map.get(SqlUtil.MODEL_ATTRIBUTE)).append("}");
-            } else if (!ReflectUtils.isNull(obj, map.get(SqlUtil.MODEL_ATTRIBUTE))) {
+                updateSetSb.append(column).append("=").append("#{").append(columnAndFieldsMap.get(column)).append("}");
+            } else if (!ReflectUtils.isNull(obj, columnAndFieldsMap.get(column))) {
                 // 不是全量更新,需要判断是否有值,只有有值的,才需要加入到set条件之中
                 if (updateSetSb.length() > 0) {
                     updateSetSb.append(",");
                 }
-                updateSetSb.append(map.get(SqlUtil.TAB_COLUMN)).append("=").append("#{").append(map.get(SqlUtil.MODEL_ATTRIBUTE)).append("}");
+                updateSetSb.append(column).append("=").append("#{").append(columnAndFieldsMap.get(column)).append("}");
             }
-
         }
     }
     /**默认的空实现,留给子类去进行增强*/

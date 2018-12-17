@@ -74,10 +74,9 @@ public class TableSqlFilter extends ParamMapSqlFilter {
         }
 
         // 普通查询语句
-        Iterator columnIterator = SqlUtil.getColumnList(baseEntity.getClass()).iterator();
-        while(columnIterator.hasNext()) {
-            Map<String, String> map = (Map)columnIterator.next();
-            String model_attribute = map.get(SqlUtil.MODEL_ATTRIBUTE);
+        Map<String, String> columnAndFieldsMap = SqlUtil.getColumnAndFieldsMap(baseEntity.getClass());
+        for (String column : columnAndFieldsMap.keySet()) {
+            String model_attribute = columnAndFieldsMap.get(column);
             if (!ReflectUtils.isNull(baseEntity, model_attribute)) {
                 // 判断,如果sqlFilter里面对应的字段已经有了,那么entity里面的字段,就不拼接进去了.
                 if (!columnSet.contains(model_attribute)) {
@@ -89,11 +88,7 @@ public class TableSqlFilter extends ParamMapSqlFilter {
 
                     String valueKey = setValueAndGetKey(ReflectUtils.getFieldValue(baseEntity, model_attribute));
 
-                    // 设置值
-//                    String valueKey = getValueKey();
-//                    sqlFilterParamMap.put(valueKey, ReflectUtils.getFieldValue(baseEntity, model_attribute));
-
-                    whereSb.append(map.get(SqlUtil.TAB_COLUMN)).append("=").append(valueKey);
+                    whereSb.append(column).append("=").append(valueKey);
                 }
             }
         }

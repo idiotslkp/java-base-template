@@ -21,7 +21,7 @@ public class SelectTemplate<T extends BaseEntity> extends AbstractSelectTemplate
     @Override
     protected void postProcessSelectColumnSql(Class<T> clazz, StringBuilder tabColumnSb) {
         tabColumnSb.insert(0, "id,");
-        tabColumnSb.append(",created_time,last_update_time");
+        tabColumnSb.append(",created_time createdTime,last_update_time lastUpdateTime");
     }
 
     @Override

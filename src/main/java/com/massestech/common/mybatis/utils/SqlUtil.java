@@ -22,19 +22,10 @@ public class SqlUtil {
 
     /** mapper对应实体的map */
     public static Map<Class<? extends MapperAware>, Class<? extends EntityAware>> entityMap = new ConcurrentHashMap<>();
-    /** 实体对应属性列表的map，这个当时为何要这么设计？ */
-    @Deprecated
-    public static Map<Class<? extends EntityAware>, List<Map<String, String>>> mapColumns = new ConcurrentHashMap();
     /** 实体对应属性列表的map */
     public static Map<Class<? extends EntityAware>, Map<String, String>> columnAndFieldsMap = new ConcurrentHashMap();
     /** 实体对应表名 */
     public static Map<Class<? extends EntityAware>, String> tableNameMap = new ConcurrentHashMap();
-    /** 属性名 */
-    public static String MODEL_ATTRIBUTE = "model_attribute";
-    /** 列名 */
-    public static String TAB_COLUMN = "tabColumn";
-    /** 列值 */
-    public static String COLUMN_VALUE = "columnValue";
 
 
     public SqlUtil() {
@@ -97,16 +88,10 @@ public class SqlUtil {
     }
 
     /**
-     * 这种数据结构貌似是多余的，一点用处都没有的样子，准备废弃.
+     * 根据calss获取class里面的字段名称以及对应的数据库字段名称的map集合.
      * @param entityClass
      * @return
      */
-    @Deprecated
-    public static List<Map<String, String>> getColumnList(Class<? extends EntityAware> entityClass) {
-        setColumnList(entityClass);    // 初始化列信息
-        return mapColumns.get(entityClass);
-    }
-
     public static Map<String, String> getColumnAndFieldsMap(Class<? extends EntityAware> entityClass) {
         setColumnList(entityClass);    // 初始化列信息
         return columnAndFieldsMap.get(entityClass);
@@ -119,12 +104,10 @@ public class SqlUtil {
      */
     public static void setColumnList(Class<? extends EntityAware> entityClass) {
 
-//        if (!columnsMap.containsKey(entityClass)) {
-        if (!mapColumns.containsKey(entityClass)) {
+        if (!columnAndFieldsMap.containsKey(entityClass)) {
             Map<String, String> columnAndFieldMap = new HashMap();
+            Map<String, String> fieldAndFieldTypeMap = new HashMap();
 
-            List<Map<String, String>> columnList = new ArrayList();
-            Map<String, String> map = null;
             String fieldName = null;
 
             for(Class clazz = entityClass; clazz != Object.class; clazz = clazz.getSuperclass()) {
@@ -135,16 +118,22 @@ public class SqlUtil {
 
                         for(int i = 0; i < length; ++i) {
                             Field field = declaredFields[i];
+                            fieldName = field.getName();
+                            /*
+                            这里判断一下，如果是数据库类型字段，那么就保存在columnAndFieldMap之中，用于新增或者查询使用。
+                            如果不是，那么就保存在fieldAndFieldTypeIsListMap之中，用于后续如果有连表查询的时候使用。
+                             */
                             if (field.isAnnotationPresent(Column.class)) {
                                 Column column = field.getAnnotation(Column.class);
-                                fieldName = field.getName();
                                 String columnName = !"".equals(column.name()) ? column.name() : CamelToUnderline.camelToUnderline(fieldName);
                                 columnAndFieldMap.put(columnName, fieldName);
-
-                                map = new HashMap();
-                                map.put(MODEL_ATTRIBUTE, columnName);
-                                map.put(TAB_COLUMN, fieldName);
-                                columnList.add(map);
+                            } else {
+                                String typeName = field.getGenericType().getTypeName();
+                                if (typeName.contains("java.util.List")) {
+                                    fieldAndFieldTypeMap.put(fieldName, null);
+                                } else {
+                                    fieldAndFieldTypeMap.put(fieldName, typeName);
+                                }
                             }
                         }
                     }
@@ -152,7 +141,6 @@ public class SqlUtil {
                 }
             }
             columnAndFieldsMap.put(entityClass, columnAndFieldMap);
-            mapColumns.put(entityClass, columnList);
         }
     }
 

@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.SelectProvider;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface UserMapper extends BaseMapper<UserEntity> {
@@ -38,5 +39,23 @@ public interface UserMapper extends BaseMapper<UserEntity> {
             method = "find"
     )
     int sum(UserEntity userEntity);
+
+    @SelectProvider(
+            type = SelectTemplate.class,
+            method = "leftJoin"
+    )
+    UserEntity join(UserEntity userEntity);
+
+    @SelectProvider(
+            type = SelectTemplate.class,
+            method = "leftJoin"
+    )
+    Map joinOne(UserEntity userEntity);
+
+    @SelectProvider(
+            type = SelectTemplate.class,
+            method = "leftJoin"
+    )
+    List<Map> joinNesty(UserEntity userEntity);
 
 }

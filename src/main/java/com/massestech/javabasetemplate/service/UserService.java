@@ -4,12 +4,16 @@ import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageInfo;
 import com.massestech.common.mybatis.provider.SelectTemplate;
 import com.massestech.common.mybatis.sqlfilter.SqlFilterBuilder;
+import com.massestech.common.mybatis.sqlfilter.join.JoinMainTableSqlFilter;
 import com.massestech.common.mybatis.sqlfilter.where.TableSqlFilter;
+import com.massestech.common.mybatis.utils.ResultsUtils;
 import com.massestech.common.utils.ExcelUtils;
 import com.massestech.common.utils.ServiceUtil;
 import com.massestech.common.web.PageInfoView;
 import com.massestech.javabasetemplate.controller.domain.ExcelUser;
 import com.massestech.javabasetemplate.controller.domain.UserView;
+import com.massestech.javabasetemplate.domain.BookEntity;
+import com.massestech.javabasetemplate.domain.EnumerateEntity;
 import com.massestech.javabasetemplate.domain.UserEntity;
 import com.massestech.javabasetemplate.repository.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserService {
@@ -95,6 +100,37 @@ public class UserService {
         UserEntity userEntity = new UserEntity();
         List<UserView> list = userMapper.pageQuery(userEntity);
         return list;
+    }
+
+    public UserEntity join() {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(5L);
+        SqlFilterBuilder.buildLeftJoin(userEntity).leftJoin(EnumerateEntity.class).on("sexStatus", "key")
+                .columnAndField("keyStr", "sexStr");
+        UserEntity join = userMapper.join(userEntity);
+        return join;
+    }
+
+    public UserEntity joinOne() {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(5L);
+        SqlFilterBuilder.buildLeftJoin(userEntity).leftJoin(EnumerateEntity.class, "enumerate").on("sexStatus", "key");
+        Map map = userMapper.joinOne(userEntity);
+        UserEntity user = ResultsUtils.toModel(map, userEntity);
+        return user;
+    }
+
+
+    public List<Map> joinNesty() {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(5L);
+        SqlFilterBuilder.buildLeftJoin(userEntity).leftJoin(BookEntity.class, "bookEntity")
+                    .on("id", "userId").relationId("id")
+                .leftJoin(EnumerateEntity.class)
+                    .on("sexStatus", "key")
+                .columnAndField("keyStr", "sexStr");
+        List<Map> joinNesty = userMapper.joinNesty(userEntity);
+        return joinNesty;
     }
 
     // select * from tableA where property = (select childTableProperty from tableB where column = #{column} and deleted = 0) and deleted = 0
