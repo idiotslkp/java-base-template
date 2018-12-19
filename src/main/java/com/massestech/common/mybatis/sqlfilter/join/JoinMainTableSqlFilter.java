@@ -93,10 +93,6 @@ public class JoinMainTableSqlFilter extends AbstractSqlFilter {
         this.pageSql = " limit " + pageNum + "," + pageSize;
     }
 
-    public BaseEntity getBaseEntity() {
-        return baseEntity;
-    }
-
     public static void main(String[] args) {
         // 这两个条件会自动的在sql里面加上
         UserEntity userEntity = new UserEntity();

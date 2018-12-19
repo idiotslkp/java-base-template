@@ -58,8 +58,17 @@ public abstract class ResultsUtils {
 //    }
 //  ]
 
+//    findLeftJoin
+//    findNestyLeftJoin
+
+//    findLeftJoinList
+//    findNestyLeftJoinList
+
+//    findLeftJoinPage
+//    findNestyLeftJoinPage
+
     /**
-     * 封装单条的嵌套数据
+     * 封装单条的嵌套数据，后续需要优化，没有字段的，那个值就跳过，不去进行设置.
      * @param resultMap
      * @param baseEntity
      * @param clazz
@@ -67,9 +76,10 @@ public abstract class ResultsUtils {
      * @return
      */
     public static <T> T toModel(Map resultMap, BaseEntity baseEntity, Class<T>... clazz) {
-        JoinMainTableSqlFilter joinMainTableSqlFilter = (JoinMainTableSqlFilter) baseEntity.getSqlFilterAdapter().getJoinSqlFilter();
-        T newObject = getObject(joinMainTableSqlFilter, clazz);
+        T newObject = getObject(baseEntity.getClass(), clazz);
         MetaObject metaObject =  MetaObject.forObject(newObject, objectFactory, objectWrapperFactory, reflectorFactory);
+
+        JoinMainTableSqlFilter joinMainTableSqlFilter = (JoinMainTableSqlFilter) baseEntity.getSqlFilterAdapter().getJoinSqlFilter();
         Map<String, MetaObject> nestyMap = new HashMap<>();
         MetaObject nestyObject = null;
         // 循环连接的表，然后定义对应的model，然后将model设置到主model里面.
@@ -80,10 +90,10 @@ public abstract class ResultsUtils {
                 // 获取字段的名称
                 String alias = leftJoibSqlFilter.getAlias().substring(1);
                 nestyMap.put(alias, nestyObject);
-                metaObject.setValue(alias, joinEntity);
+                setValue(metaObject, alias, joinEntity);
             }
         }
-
+        // 遍历，将结果集设置到model里面
         for (Object key : resultMap.keySet()) {
             String fieldName = key.toString();
             // 凡是带有以'_'线开头的字段，都是连表的字段
@@ -96,9 +106,9 @@ public abstract class ResultsUtils {
                 // 嵌套model里面的字段名
                 fieldName = fieldName.substring(fieldName.lastIndexOf("_") + 1);
                 nestyObject = nestyMap.get(alias);
-                nestyObject.setValue(fieldName, resultMap.get(key));
+                setValue(nestyObject, fieldName, resultMap.get(key));
             } else {
-                metaObject.setValue(fieldName, resultMap.get(key));
+                setValue(metaObject, fieldName, resultMap.get(key));
             }
         }
 
@@ -108,40 +118,52 @@ public abstract class ResultsUtils {
     /**
      * 将map转换为model
      * @param resultMapList
-     * @param joinMainTableSqlFilter
+     * @param baseEntity
      * @param clazz
      * @param <T>
      * @return
      */
-    public static <T> T toModel(List<Map> resultMapList, JoinMainTableSqlFilter joinMainTableSqlFilter, Class<T>... clazz) {
-        T newObject = getObject(joinMainTableSqlFilter, clazz);
+    public static <T> T toModel(List<Map> resultMapList, BaseEntity baseEntity, Class<T>... clazz) {
+        JoinMainTableSqlFilter joinMainTableSqlFilter = (JoinMainTableSqlFilter) baseEntity.getSqlFilterAdapter().getJoinSqlFilter();
+        T newObject = getObject(baseEntity.getClass(), clazz);
         Object id = null;
         MetaObject metaObject = null;
+        MetaObject nestyMetaObject = null;
+
         // 嵌套对象的结果集map，key是连接表的别名,也是model里面的嵌套字段的名称
-        Map<String, NestyModel> nestyModelMap = getNestyModelMap(joinMainTableSqlFilter);
-        // key:relationId_关联id的value
-        Map<String, List> nestyListMap = new HashMap<>();
+        Map<String, NestyModel> nestyMap = getNestyModelMap(joinMainTableSqlFilter);
+        // 存放嵌套的list对象的字段名的集合
+        List<String> listTypeAliasList = null;
+
+        // key:id值_关联id名_关联id值
+        Map<String, MetaObject> nestyListMap = new HashMap<>();
         // 关联对象的map
-        Map<Object, MetaObject> relationMap = new HashMap<>();
+        Map<String, MetaObject> nestyModelMap = new HashMap<>();
 
         // 遍历结果集，封装成嵌套的model
         for (int i = 0; i < resultMapList.size(); i++) {
+//            String
             Map resultMap = resultMapList.get(i);
             if (i == 0) {
                 id  = resultMap.get("id");
                 metaObject = MetaObject.forObject(newObject, objectFactory, objectWrapperFactory, reflectorFactory);
+                listTypeAliasList = new ArrayList<>();
                 // 每个model里面的嵌套结果集初始化.
-                for (String alias : nestyModelMap.keySet()) {
+                for (String alias : nestyMap.keySet()) {
                     // 还没有初始化的，给他初始化一次.
                     if (null == metaObject.getValue(alias)) {
-                        NestyModel nestyModel = nestyModelMap.get(alias);
+                        NestyModel nestyModel = nestyMap.get(alias);
                         Object nestyFieldValue = null;
+                        // 判断是否是list类型
                         if (nestyModel.isListType()) {
                             nestyFieldValue = new ArrayList<>();
+                            listTypeAliasList.add(alias);
                         } else {
                             nestyFieldValue = objectFactory.create(nestyModel.getJoinEntityClass());
+                            nestyMetaObject = MetaObject.forObject(nestyFieldValue, objectFactory, objectWrapperFactory, reflectorFactory);
+                            nestyModelMap.put(alias, nestyMetaObject);
                         }
-                        metaObject.setValue(alias, nestyFieldValue);
+                        setValue(metaObject, alias, nestyFieldValue);
                     }
                 }
             } else {
@@ -151,11 +173,19 @@ public abstract class ResultsUtils {
                 }
             }
 
-            for (String relationIdAndValue : nestyListMap.keySet()) {
-
+            // 遍历list的别名，然后看看该
+            for (String alias : listTypeAliasList) {
+                String nestyListKey = id + "_" + alias + "_" + resultMap.get("_" + alias + "_" + "id");
+                if (nestyListMap.get(nestyListKey) == null) {
+                    NestyModel nestyModel = nestyMap.get(alias);
+                    Object obj =  objectFactory.create(nestyModel.getJoinEntityClass());
+                    nestyMetaObject = MetaObject.forObject(obj, objectFactory, objectWrapperFactory, reflectorFactory);
+                    List nestyList = (List) metaObject.getValue(alias);
+                    nestyList.add(obj);
+                    nestyListMap.put(nestyListKey, nestyMetaObject);
+                }
             }
 
-            boolean isFirst = true;
             // 封装字段值
             for (Object key : resultMap.keySet()) {
                 String fieldName = key.toString();
@@ -163,11 +193,10 @@ public abstract class ResultsUtils {
                 boolean isNestyModelField = key.toString().startsWith("_");
                 // 这里只封装第一条结果集,并且不是嵌套的model里面的字段
                 if (i == 0 && !isNestyModelField) {
-                    metaObject.setValue(fieldName, resultMap.get(key));
+                    setValue(metaObject, fieldName, resultMap.get(key));
                 }
                 // 以下划线 '_' 为开头的是嵌套的model字段
                 if (isNestyModelField) {
-                    MetaObject nestyObject = null;
 
                     String alias = fieldName.substring(1, fieldName.lastIndexOf("_"));
                     fieldName = fieldName.substring(fieldName.lastIndexOf("_") + 1);
@@ -175,16 +204,24 @@ public abstract class ResultsUtils {
                     // 判断值是否是嵌套对象，如果是嵌套的list对象，那么需要进行在list里面根据关联id去进行对象的创建
                     if (value instanceof List) {
                         // 根据关联id去进行筛选.
+                        String nestyListKey = id + "_" + alias + "_" + resultMap.get("_" + alias + "_" + "id");
 
+                        nestyMetaObject = nestyListMap.get(nestyListKey);
+
+                        setValue(nestyMetaObject, fieldName, resultMap.get(key));
+//                        if (nestyListMap.get(nestyListKey) == null) {
+////                            nestyMetaObject =
+//                            NestyModel nestyModel = nestyMap.get(alias);
+//                            nestyMetaObject = MetaObject.forObject(objectFactory.create(nestyModel.getJoinEntityClass()), objectFactory, objectWrapperFactory, reflectorFactory);
+//                            nestyListMap.put(nestyListKey, nestyMetaObject);
+//                        } else {
+//                            nestyMetaObject = nestyListMap.get(nestyListKey);
+//
+//                        }
                     } else if (i == 0) {
                         // 只有第一次的时候需要去进行设置
-                        if (null == relationMap.get(value)) {
-                            nestyObject = MetaObject.forObject(value, objectFactory, objectWrapperFactory, reflectorFactory);
-                            relationMap.put(value, nestyObject);
-                        } else {
-                            nestyObject = relationMap.get(value);
-                        }
-                        nestyObject.setValue(fieldName, resultMap.get(key));
+                        nestyMetaObject = nestyModelMap.get(alias);
+                        setValue(nestyMetaObject, fieldName, resultMap.get(key));
                     }
                 }
             }
@@ -193,10 +230,10 @@ public abstract class ResultsUtils {
         return newObject;
     }
 
-    private static <T> T getObject(JoinMainTableSqlFilter joinMainTableSqlFilter, Class<T>[] clazz) {
+    private static <T> T getObject(Class<? extends BaseEntity> entityClass, Class<T>[] clazz) {
         T newObject = null;
         if (null == clazz || clazz.length == 0) {
-            newObject = (T) objectFactory.create(joinMainTableSqlFilter.getBaseEntity().getClass());
+            newObject = (T) objectFactory.create(entityClass);
         } else {
             newObject = objectFactory.create(clazz[0]);
         }
@@ -210,8 +247,6 @@ public abstract class ResultsUtils {
      */
     private static Map<String, NestyModel> getNestyModelMap(JoinMainTableSqlFilter joinMainTableSqlFilter) {
         Map<String, NestyModel> nestyModelMap = new HashMap<>();
-        // 获取嵌套子对象在目标对象中是否是list类型的map
-//        Map<String, Boolean> fieldAndFieldTypeIsListsMap = SqlUtil.fieldAndFieldTypeIsListsMap.get(joinMainTableSqlFilter.getBaseEntity().getClass());
         List<LeftJoibSqlFilter> leftJoibSqlFilterList = joinMainTableSqlFilter.getLeftJoibSqlFilterList();
         // 字段名--字段值     字段名--关联id
         for (LeftJoibSqlFilter leftJoibSqlFilter : leftJoibSqlFilterList) {
@@ -223,11 +258,10 @@ public abstract class ResultsUtils {
                 nestyModel.setRelationId(relationId);
 
                 // 获取该字段在model里面的名称
-                String alias = leftJoibSqlFilter.getAlias();
+                String alias = leftJoibSqlFilter.getAlias().substring(1);
                 Class<? extends BaseEntity> joinEntityClass = leftJoibSqlFilter.getJoinEntityClass();
                 // 这里判断一下是否是list的属性，如果是的那么需要创建一个list对象，如果不是直接反射创建嵌套的对象即可。
-//                if (fieldAndFieldTypeIsListsMap.get(alias)) {
-                if (null == leftJoibSqlFilter.getRelationId()) {
+                if (null != leftJoibSqlFilter.getRelationId()) {
                     List nestyModelList = new ArrayList<>();
                     nestyModel.setFieldValue(nestyModelList);
                     nestyModel.setListType(true);
@@ -267,13 +301,27 @@ public abstract class ResultsUtils {
         return null;
     }
 
+    /**
+     * 将字段名对应的值，设置到model里面中去，只设置有setter方法的字段.
+     * @param metaObject
+     * @param name
+     * @param value
+     */
+    private static void setValue(MetaObject metaObject, String name, Object value) {
+        // 只对有set的字段进行设置
+        if (metaObject.hasSetter(name)) {
+            metaObject.setValue(name, value);
+        }
+    }
+
     public static void main(String[] args) {
         JoinMainTableSqlFilter joinMainTableSqlFilter = new JoinMainTableSqlFilter(new UserEntity());
-//        UserEntity userEntity = toModel(new HashMap(), joinMainTableSqlFilter);
-//        System.out.println(userEntity);
         String kk = "_test_hello";
         System.out.println(kk.substring(kk.lastIndexOf("_") + 1));
         System.out.println(kk.substring(1, kk.lastIndexOf("_")));
+        UserEntity userEntity = new UserEntity();
+        MetaObject metaObject = MetaObject.forObject(userEntity, objectFactory, objectWrapperFactory, reflectorFactory);
+        System.out.println(metaObject.hasSetter("test"));
     }
 
 }

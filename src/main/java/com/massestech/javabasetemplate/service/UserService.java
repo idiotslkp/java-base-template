@@ -121,16 +121,17 @@ public class UserService {
     }
 
 
-    public List<Map> joinNesty() {
+    public UserEntity joinNesty() {
         UserEntity userEntity = new UserEntity();
         userEntity.setId(5L);
-        SqlFilterBuilder.buildLeftJoin(userEntity).leftJoin(BookEntity.class, "bookEntity")
+        SqlFilterBuilder.buildLeftJoin(userEntity).leftJoin(BookEntity.class, "bookEntityList")
                     .on("id", "userId").relationId("id")
                 .leftJoin(EnumerateEntity.class)
                     .on("sexStatus", "key")
                 .columnAndField("keyStr", "sexStr");
         List<Map> joinNesty = userMapper.joinNesty(userEntity);
-        return joinNesty;
+        UserEntity user = ResultsUtils.toModel(joinNesty, userEntity);
+        return user;
     }
 
     // select * from tableA where property = (select childTableProperty from tableB where column = #{column} and deleted = 0) and deleted = 0

@@ -132,8 +132,8 @@ public class UserController extends SimpleController {
     @ApiOperation("测试连表查询")
     @GetMapping("joinNesty")
     public RestResponse joinNesty() {
-        List<Map> joinNesty = userService.joinNesty();
-        return success(joinNesty);
+        UserEntity user = userService.joinNesty();
+        return success(user);
     }
 
 }
